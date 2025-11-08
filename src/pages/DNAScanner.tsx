@@ -75,7 +75,7 @@ export default function DNAScanner() {
   };
 
   const loadGenomeDetails = async (genomeId: string) => {
-    const [modulesRes, functionsRes, depsRes, packagesRes, healthRes, suggestionsRes] = await Promise.all([
+    const [modulesRes, functionsRes, depsRes, packagesRes, healthRes, suggestionsRes]: any[] = await Promise.all([
       supabase.from("genome_modules").select("*").eq("genome_id", genomeId),
       supabase.from("genome_functions").select("*"),
       supabase.from("genome_dependencies").select("*").eq("genome_id", genomeId),
