@@ -75,13 +75,13 @@ export default function DNAScanner() {
   };
 
   const loadGenomeDetails = async (genomeId: string) => {
-    const [modulesRes, functionsRes, depsRes, packagesRes, healthRes, suggestionsRes]: any[] = await Promise.all([
-      supabase.from("genome_modules").select("*").eq("genome_id", genomeId),
-      supabase.from("genome_functions").select("*"),
-      supabase.from("genome_dependencies").select("*").eq("genome_id", genomeId),
-      supabase.from("genome_packages").select("*").eq("genome_id", genomeId),
-      supabase.from("genome_health").select("*").eq("genome_id", genomeId).maybeSingle(),
-      supabase.from("genome_suggestions").select("*").eq("repository_id", selectedRepo),
+    const [modulesRes, functionsRes, depsRes, packagesRes, healthRes, suggestionsRes] = await Promise.all([
+      (supabase as any).from("genome_modules").select("*").eq("genome_id", genomeId),
+      (supabase as any).from("genome_functions").select("*"),
+      (supabase as any).from("genome_dependencies").select("*").eq("genome_id", genomeId),
+      (supabase as any).from("genome_packages").select("*").eq("genome_id", genomeId),
+      (supabase as any).from("genome_health").select("*").eq("genome_id", genomeId).maybeSingle(),
+      (supabase as any).from("genome_suggestions").select("*").eq("repository_id", selectedRepo),
     ]);
 
     const genomeData = scanHistory.find(g => g.id === genomeId);

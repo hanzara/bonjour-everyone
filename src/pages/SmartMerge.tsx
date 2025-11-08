@@ -72,7 +72,7 @@ export default function SmartMerge() {
 
   const fetchGitHubConfig = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('github_config')
         .select('*')
         .eq('is_active', true)
@@ -98,13 +98,13 @@ export default function SmartMerge() {
       if (!user) throw new Error('Not authenticated');
 
       // Deactivate existing configs
-      await supabase
+      await (supabase as any)
         .from('github_config')
         .update({ is_active: false })
         .eq('user_id', user.id);
 
       // Insert new config
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('github_config')
         .insert({
           user_id: user.id,
@@ -128,7 +128,7 @@ export default function SmartMerge() {
   const fetchMutations = async () => {
     try {
       setLoading(true);
-      const { data: mutationsData, error } = await supabase
+      const { data: mutationsData, error } = await (supabase as any)
         .from('mutations')
         .select(`
           *,
@@ -138,14 +138,14 @@ export default function SmartMerge() {
 
       if (error) throw error;
 
-      setMutations(mutationsData || []);
+      setMutations(mutationsData as any || []);
       
       const mutationId = searchParams.get('mutation');
-      if (mutationId && mutationsData) {
-        const mutation = mutationsData.find(m => m.id === mutationId);
-        if (mutation) setSelectedMutation(mutation);
+      if (mutationsData) {
+        const mutation = mutationsData.find((m: any) => m.id === mutationId);
+        if (mutation) setSelectedMutation(mutation as any);
       } else if (mutationsData && mutationsData.length > 0) {
-        setSelectedMutation(mutationsData[0]);
+        setSelectedMutation(mutationsData[0] as any);
       }
     } catch (error) {
       console.error('Error fetching mutations:', error);
@@ -169,7 +169,7 @@ export default function SmartMerge() {
 
       if (error) throw error;
 
-      await supabase
+      await (supabase as any)
         .from('mutation_history')
         .insert({
           mutation_id: selectedMutation.id,
@@ -223,7 +223,7 @@ export default function SmartMerge() {
 
       if (error) throw error;
 
-      await supabase
+      await (supabase as any)
         .from('mutation_history')
         .insert({
           mutation_id: selectedMutation.id,

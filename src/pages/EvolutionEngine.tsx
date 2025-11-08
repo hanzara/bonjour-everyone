@@ -94,7 +94,7 @@ export default function EvolutionEngine() {
   };
 
   const loadMutations = async (repoId: string, campaignId?: string) => {
-    let query = supabase
+    let query = (supabase as any)
       .from("mutations")
       .select("*, mutation_tests(*)")
       .eq("repository_id", repoId);
@@ -105,7 +105,7 @@ export default function EvolutionEngine() {
     
     const { data } = await query.order("composite_score", { ascending: false, nullsFirst: false });
 
-    setMutations(data || []);
+    setMutations(data as any || []);
   };
 
   const handleCreateCampaign = async (data: CampaignData) => {
@@ -163,7 +163,7 @@ export default function EvolutionEngine() {
     }
 
     // Log to history
-    await supabase.from("mutation_history").insert({
+    await (supabase as any).from("mutation_history").insert({
       mutation_id: mutationId,
       action: "applied",
       actor: "user",
@@ -187,7 +187,7 @@ export default function EvolutionEngine() {
     }
 
     // Log to history
-    await supabase.from("mutation_history").insert({
+    await (supabase as any).from("mutation_history").insert({
       mutation_id: mutationId,
       action: "rejected",
       actor: "user"

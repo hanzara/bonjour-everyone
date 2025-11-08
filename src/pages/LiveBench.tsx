@@ -72,7 +72,7 @@ export default function LiveBench() {
   };
 
   const loadTestResults = async (repoId: string) => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("mutation_tests")
       .select(`
         *,

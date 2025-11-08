@@ -15,205 +15,123 @@ import {
   Cpu, Zap, Lock, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function EvolutionCloud() {
   const [evolutionMode, setEvolutionMode] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
-  const [ledgerEntries, setLedgerEntries] = useState<any[]>([]);
-  const [deploymentHistory, setDeploymentHistory] = useState<any[]>([]);
 
-  // Real-time metrics from database
+  // Mock real-time metrics (will connect to real DB after setup)
   const [metrics, setMetrics] = useState({
-    performanceGain: 0,
-    securityStability: 0,
-    costOptimization: 0,
-    mutationSuccess: 0,
-    cpuUsage: 0,
-    memoryUsage: 0,
-    responseTime: 0,
-    errorRate: 0
+    performanceGain: 23,
+    securityStability: 98,
+    costOptimization: 15,
+    mutationSuccess: 87,
+    cpuUsage: 45,
+    memoryUsage: 62,
+    responseTime: 28,
+    errorRate: 2
   });
 
-  // Load initial data
-  useEffect(() => {
-    loadLedgerEntries();
-    loadLatestMetrics();
-    loadDeploymentHistory();
-  }, []);
-
-  // Setup real-time subscriptions
-  useEffect(() => {
-    const ledgerChannel = supabase
-      .channel('evolution-ledger-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'evolution_ledger'
-        },
-        () => {
-          loadLedgerEntries();
-        }
-      )
-      .subscribe();
-
-    const metricsChannel = supabase
-      .channel('evolution-metrics-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'evolution_metrics'
-        },
-        (payload) => {
-          const newMetrics = payload.new as any;
-          setMetrics({
-            performanceGain: newMetrics.performance_gain,
-            securityStability: newMetrics.security_stability,
-            costOptimization: newMetrics.cost_optimization,
-            mutationSuccess: newMetrics.mutation_success,
-            cpuUsage: newMetrics.cpu_usage,
-            memoryUsage: newMetrics.memory_usage,
-            responseTime: newMetrics.response_time,
-            errorRate: newMetrics.error_rate
-          });
-        }
-      )
-      .subscribe();
-
-    const deploymentChannel = supabase
-      .channel('deployment-logs-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'deployment_logs'
-        },
-        () => {
-          loadDeploymentHistory();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(ledgerChannel);
-      supabase.removeChannel(metricsChannel);
-      supabase.removeChannel(deploymentChannel);
-    };
-  }, []);
-
-  // Simulate evolution mode - insert new metrics periodically
+  // Simulate real-time updates
   useEffect(() => {
     if (evolutionMode) {
-      const interval = setInterval(async () => {
-        const newMetrics = {
-          performance_gain: Math.min(100, metrics.performanceGain + Math.random() * 2),
-          security_stability: Math.max(90, Math.min(100, metrics.securityStability + (Math.random() - 0.5))),
-          cost_optimization: Math.min(100, metrics.costOptimization + Math.random() * 1.5),
-          mutation_success: Math.max(80, Math.min(95, metrics.mutationSuccess + (Math.random() - 0.5) * 2)),
-          cpu_usage: Math.max(20, Math.min(80, metrics.cpuUsage + (Math.random() - 0.5) * 10)),
-          memory_usage: Math.max(30, Math.min(90, metrics.memoryUsage + (Math.random() - 0.5) * 8)),
-          response_time: Math.max(10, Math.min(100, metrics.responseTime + (Math.random() - 0.5) * 5)),
-          error_rate: Math.max(0, Math.min(10, metrics.errorRate + (Math.random() - 0.5) * 0.5))
-        };
-
-        await (supabase as any).from('evolution_metrics').insert([newMetrics]);
+      const interval = setInterval(() => {
+        setMetrics(prev => ({
+          performanceGain: Math.min(100, prev.performanceGain + Math.random() * 2),
+          securityStability: Math.max(90, Math.min(100, prev.securityStability + (Math.random() - 0.5))),
+          costOptimization: Math.min(100, prev.costOptimization + Math.random() * 1.5),
+          mutationSuccess: Math.max(80, Math.min(95, prev.mutationSuccess + (Math.random() - 0.5) * 2)),
+          cpuUsage: Math.max(20, Math.min(80, prev.cpuUsage + (Math.random() - 0.5) * 10)),
+          memoryUsage: Math.max(30, Math.min(90, prev.memoryUsage + (Math.random() - 0.5) * 8)),
+          responseTime: Math.max(10, Math.min(100, prev.responseTime + (Math.random() - 0.5) * 5)),
+          errorRate: Math.max(0, Math.min(10, prev.errorRate + (Math.random() - 0.5) * 0.5))
+        }));
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [evolutionMode, metrics]);
-
-  const loadLedgerEntries = async () => {
-    const { data, error } = await (supabase as any)
-      .from('evolution_ledger')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    if (error) {
-      console.error('Error loading ledger:', error);
-      return;
-    }
-
-    setLedgerEntries(data || []);
-  };
-
-  const loadLatestMetrics = async () => {
-    const { data, error } = await (supabase as any)
-      .from('evolution_metrics')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error) {
-      console.error('Error loading metrics:', error);
-      return;
-    }
-
-    if (data) {
-      setMetrics({
-        performanceGain: data.performance_gain,
-        securityStability: data.security_stability,
-        costOptimization: data.cost_optimization,
-        mutationSuccess: data.mutation_success,
-        cpuUsage: data.cpu_usage,
-        memoryUsage: data.memory_usage,
-        responseTime: data.response_time,
-        errorRate: data.error_rate
-      });
-    }
-  };
-
-  const loadDeploymentHistory = async () => {
-    const { data, error } = await (supabase as any)
-      .from('deployment_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    if (error) {
-      console.error('Error loading deployments:', error);
-      return;
-    }
-
-    setDeploymentHistory(data || []);
-  };
+  }, [evolutionMode]);
 
   const handleEvolutionToggle = (enabled: boolean) => {
     setEvolutionMode(enabled);
     toast.success(enabled ? "Evolution Mode Activated 🧬" : "Evolution Mode Paused");
   };
 
-  const handleDeploy = async (platform: string) => {
+  const handleDeploy = (platform: string) => {
     setIsDeploying(true);
     toast.success(`Deploying to ${platform}...`);
-    
-    // Simulate deployment
-    setTimeout(async () => {
-      const { error } = await (supabase as any).from('deployment_logs').insert([
-        {
-          platform,
-          version: `v2.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 100)}`,
-          status: 'success',
-          mutation_ids: ledgerEntries.slice(0, 2).map(e => e.mutation_id)
-        }
-      ]);
-
-      if (error) {
-        console.error('Error logging deployment:', error);
-        toast.error('Failed to log deployment');
-      } else {
-        toast.success(`Successfully deployed to ${platform}!`);
-      }
-      
+    setTimeout(() => {
       setIsDeploying(false);
+      toast.success(`Successfully deployed to ${platform}!`);
     }, 2000);
   };
+
+  // Mock evolution ledger data
+  const ledgerEntries = [
+    {
+      id: "m#2025-115",
+      mutation_id: "m#2025-115",
+      created_at: "2025-11-08T12:32:44Z",
+      type: "performance",
+      description: "Optimized database queries",
+      gain: "+23%",
+      status: "success",
+      signature: "AI_NODE_8x"
+    },
+    {
+      id: "m#2025-114",
+      mutation_id: "m#2025-114",
+      created_at: "2025-11-08T11:15:20Z",
+      type: "security",
+      description: "Updated dependency vulnerabilities",
+      gain: "+5% security",
+      status: "success",
+      signature: "AI_NODE_7x"
+    },
+    {
+      id: "m#2025-113",
+      mutation_id: "m#2025-113",
+      created_at: "2025-11-08T09:48:12Z",
+      type: "cost",
+      description: "Optimized API caching strategy",
+      gain: "-15% cost",
+      status: "success",
+      signature: "AI_NODE_6x"
+    },
+    {
+      id: "m#2025-112",
+      mutation_id: "m#2025-112",
+      created_at: "2025-11-08T08:22:05Z",
+      type: "performance",
+      description: "Improved async operation handling",
+      gain: "+12%",
+      status: "rolled_back",
+      signature: "AI_NODE_5x"
+    }
+  ];
+
+  const deploymentHistory = [
+    {
+      id: "1",
+      platform: "Netlify",
+      version: "v2.3.1",
+      created_at: "2025-11-08T10:32:44Z",
+      status: "success"
+    },
+    {
+      id: "2",
+      platform: "Vercel",
+      version: "v2.3.0",
+      created_at: "2025-11-08T07:15:20Z",
+      status: "success"
+    },
+    {
+      id: "3",
+      platform: "Netlify",
+      version: "v2.2.9",
+      created_at: "2025-11-07T12:32:44Z",
+      status: "success"
+    }
+  ];
 
   return (
     <SidebarProvider>
@@ -423,15 +341,7 @@ export default function EvolutionCloud() {
                     <ScrollArea className="h-96">
                       <div className="space-y-3">
                         {ledgerEntries.map((entry) => (
-                          <LedgerEntry key={entry.id} entry={{
-                            id: entry.mutation_id,
-                            timestamp: entry.created_at,
-                            type: entry.type,
-                            description: entry.description,
-                            gain: entry.gain,
-                            status: entry.status,
-                            signature: entry.signature
-                          }} />
+                          <LedgerEntry key={entry.id} entry={entry} />
                         ))}
                       </div>
                     </ScrollArea>
@@ -492,20 +402,24 @@ export default function EvolutionCloud() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {deploymentHistory.map((deployment) => (
-                        <DeploymentHistoryItem
-                          key={deployment.id}
-                          platform={deployment.platform}
-                          version={deployment.version}
-                          timestamp={new Date(deployment.created_at).toLocaleString()}
-                          status={deployment.status}
-                        />
-                      ))}
-                      {deploymentHistory.length === 0 && (
-                        <p className="text-center text-muted-foreground py-8">
-                          No deployments yet
-                        </p>
-                      )}
+                      <DeploymentHistoryItem
+                        platform="Netlify"
+                        version="v2.3.1"
+                        timestamp="2 hours ago"
+                        status="success"
+                      />
+                      <DeploymentHistoryItem
+                        platform="Vercel"
+                        version="v2.3.0"
+                        timestamp="5 hours ago"
+                        status="success"
+                      />
+                      <DeploymentHistoryItem
+                        platform="Netlify"
+                        version="v2.2.9"
+                        timestamp="1 day ago"
+                        status="success"
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -577,7 +491,7 @@ const LedgerEntry = ({ entry }: any) => {
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {new Date(entry.timestamp).toLocaleString()}
+            {new Date(entry.created_at).toLocaleString()}
           </span>
           <span className="font-medium text-primary">{entry.gain}</span>
           <span className="flex items-center gap-1">
@@ -586,7 +500,7 @@ const LedgerEntry = ({ entry }: any) => {
           </span>
         </div>
         <Badge variant="outline" className="mt-2 text-xs">
-          {entry.id}
+          {entry.mutation_id}
         </Badge>
       </div>
     </div>
